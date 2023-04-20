@@ -1,5 +1,5 @@
 $(document).ready(function () {
-  var APIKey = "07a6f130181d06422d27a7ea858ae897";
+  var APIKey = "c4df58c901cb6f151e85cb49888049e7";
 
   var southernTexasCitys = [
     { name: "Webster Texas", lat: 29.5377, lon: -95.1183 },
@@ -18,15 +18,21 @@ $(document).ready(function () {
         .data("lon", city.lon);
 
       var listItem = $("<li>").append(cityButton);
-      $("#predefined-cities").append(listItem);
+      $("#southern-texas-citys").append(listItem);
     });
   }
 
   function getWeatherForecast(lat, lon) {
     return $.get(
       "https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${APIKey}"
+  );
+  }
+function getCityCoordinates(cityName) {
+    return $.get(
+      `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${APIKey}`
     );
   }
+
   function kelvinToCelsius(kelvin) {
     return kelvin - 273.15;
   }
@@ -35,80 +41,60 @@ $(document).ready(function () {
     console.log(data);
   }
 
+
+  function loadSearchHistory() {
+    var searchHistory = localStorage.getItem("searchHistory");
+    if (searchHistory) {
+      searchHistory = JSON.parse(searchHistory);
+      searchHistory.forEach(function (city) {
+        var listItem = $("<li>").text(city);
+        $("#search-history").append(listItem);
+      });
+    } else {
+      searchHistory = [];
+    }
+    return searchHistory;
+  }
+
+  function saveSearchHistory(searchHistory) {
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+  }
+
+  var searchHistory = loadSearchHistory();
+
   generateCityButtons();
 
-  $("#predefined-cities").on("click", "button", function () {
-    var lat = $(this).data("lat");
-    var lon = $(this).data("lon");
 
-    getWeatherForecast(lat, lon).then(displayWeatherData);
-  });
+$("#city-form").submit(function (event) {
+  event.preventDefault();
+  var cityName = $("#city-input").val();
 
-  $("#city-form").submit(function (event) {
-    event.preventDefault();
-    var cityName = $("#city-input").val();
+  if (cityName) {
+    var city = southern-texas-citys.find(function (city) {
+      return city.name.toLowerCase() === cityName.toLowerCase();
+    });
 
-    if (cityName) {
+    if (city) {
+      getWeatherForecast(city.lat, city.lon).then(displayWeatherData);
+    } else {
       getCityCoordinates(cityName)
         .done(function (cityData) {
           var lat = cityData.coord.lat;
           var lon = cityData.coord.lon;
 
           getWeatherForecast(lat, lon).then(displayWeatherData);
+
+          if (!searchHistory.includes(cityName)) {
+            searchHistory.push(cityName);
+            saveSearchHistory(searchHistory);
+            var listItem = $("<li>").text(cityName);
+            $("#search-history").append(listItem);
+          }
         })
         .fail(function () {
           alert("Error: please try again");
         });
     }
+    }
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
